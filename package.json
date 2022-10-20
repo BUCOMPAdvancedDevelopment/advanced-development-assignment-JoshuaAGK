@@ -1,0 +1,33 @@
+{
+  "name": "advanced-development-assignment",
+  "version": "1.0.0",
+  "description": "Assignment for Advanced Development 2022/23",
+  "main": "index.js",
+  "scripts": {
+    "build": "copyfiles -u 1 \"src/**/*\" -e \"src/**/*.ts\" dist",
+    "postbuild": "tsc-watch --onSuccess \"npm run start\"",
+    "start": "cls && nodemon --ignore dist/api/public/scripts --ignore dist/api/private/data dist/app.js"
+  },
+  "author": "Joshua Kelley - S5208752",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.2.1",
+    "body-parser": "^1.20.1",
+    "crypto": "^1.0.1",
+    "express": "^4.18.2",
+    "express-handlebars": "^6.0.6",
+    "express-session": "^1.17.3",
+    "firebase": "^9.14.0",
+    "firebase-admin": "^11.3.0",
+    "fs": "^0.0.1-security",
+    "hbs": "^4.2.0",
+    "mysql": "^2.18.1",
+    "socket.io": "^4.5.3",
+    "stripe": "^11.1.0",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/uuid": "^8.3.4",
+    "tsc-watch": "^5.0.3"
+  }
+}
