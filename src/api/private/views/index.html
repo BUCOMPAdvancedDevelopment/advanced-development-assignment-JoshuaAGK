@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1">
+    <title>AD Games</title>
+    <meta name="theme-color" content="#242F40">
+    <link rel="icon" type="image/x-icon" id="light-scheme-icon" href="/media/pictures/AD_s_b.png">
+    <link rel="icon" type="image/x-icon" id="dark-scheme-icon" href="/media/pictures/AD_s_w.png">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.css" />
+    <link rel="stylesheet" href="/styles/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
+    <script src="https://unpkg.com/axios@1.0/dist/axios.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.16.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.16.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.16.1/firebase-firestore.js"></script>
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="/scripts/app.js"></script>
+</head>
+<body>
+    <header>
+        <nav id="nav-bar">
+            <a href="/"><img id="nav-logo" src="/media/pictures/AD_GAMES.png"/></a>
+            <a id="nav-link-search" class="black-invert margin-left-auto" onclick="toggleSearchBar()"><img src="/media/bootstrap-icons-1.10.1/search.svg"/></a>
+            <a id="nav-link-account" class="black-invert" href="/account"><img src="/media/bootstrap-icons-1.10.1/person-circle.svg"/></a>
+            <a id="nav-link-cart" class="black-invert" href="/cart"><img src="/media/bootstrap-icons-1.10.1/cart2.svg"/></a>
+        </nav>
+        <input id="search-bar" name="search-bar" type="text" placeholder="Search" oninput="searchQuery(event)" onkeypress="searchQuerySubmit(event)"/>
+    </header>
+    <ul id="search-results"></ul>
+    <main>
+        <section class="main-section">
+            <div id="hero-slider" class="slider-container">
+                <div class="swiper">
+                    <div class="swiper-wrapper">
+                        <div class="swiper-slide"><a href="/"><img src="/media/pictures/Christmas.png"></a></div>
+                        <div class="swiper-slide"><a href="/games/tom-clancys-rainbow-six-siege"><img src="/media/pictures/RainbowSix.png"></a></div>
+                    </div>
+                    <div class="swiper-pagination"></div>
+                </div>
+            </div>
+        </section>
+        <section class="main-section">
+            <h2>Featured Games</h2>
+            <div id="featured-games">
+                <div class="featured-game" title="Lorem Ipsum"><a href="#"><img src="#"/></a></div>
+            </div>
+        </section>
+        <section class="main-section">
+            <h2>All Games</h2>
+            <a href="/games" class="big-center-button">View all games</a>
+        </section>
+    </main>
+    <footer>
+        <div class="footer-element">
+            <h3>Payment Methods</h3>
+            <div id="footer-grid">
+                <img title="Stripe" class="black-invert" src="/media/bootstrap-icons-1.10.1/stripe.svg"/>
+            </div>
+        </div>
+        <div class="footer-element">
+            <h3><a href="/about">About Us / Contact Us</a></h3>
+        </div>
+        <div class="footer-element">
+            <p id="footer-copyright">© AD Games 2022</p>
+        </div>
+    </footer>
+</body>
+</html>
+</body>
+</html>
