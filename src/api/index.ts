@@ -3,17 +3,32 @@ const express = require('express')
 const app = express()
 const port = 3000
 const fs = require('fs');
+const handlebars = require('express-handlebars');
+
+// Handlebars config
+app.engine('.hbs', handlebars.engine({
+    extname: ".hbs",
+    defaultLayout: "main",
+    helpers: {
+        // Return true if items equal
+        ifEquals: (item1: any, item2: any) => {
+            return item1 == item2;
+        },
+    }
+}));
 
 // Index page
 app.get('/', async (req: any, res: any) => {    
-    const index = await readFile(__dirname + "/private/views/index.html");
-    res.send(index);
+    res.render("index", { pageName: null });
 })
 
 // Express config
 app.listen(port, () => {
     console.log(`AD Games listening on port ${port}`);
 })
+app.use(express.static(__dirname + "/public"));
+app.set('view engine', 'hbs');
+app.set('views', __dirname + '\\private\\views\\');
 
 // Return contents of file
 function readFile(path: string) {

@@ -1,0 +1,25 @@
+<main>
+    <section class="main-section">
+        <div id="hero-slider" class="slider-container">
+            <div class="swiper">
+                <div class="swiper-wrapper">
+                    <div class="swiper-slide"><a href="/"><img src="/media/pictures/Christmas.png"></a></div>
+                    <div class="swiper-slide"><a href="/games/tom-clancys-rainbow-six-siege"><img src="/media/pictures/RainbowSix.png"></a></div>
+                </div>
+                <div class="swiper-pagination"></div>
+            </div>
+        </div>
+    </section>
+    <section class="main-section">
+        <h2>Featured Games</h2>
+        <div id="featured-games">
+            {{#each featuredItems}}
+                    <div class="featured-game" title="{{this.name}}"><a href="games/{{this.slug}}"><img src="{{this.images.coverTall}}"/></a></div>
+            {{/each}}
+        </div>
+    </section>
+    <section class="main-section">
+        <h2>All Games</h2>
+        <a href="/games" class="big-center-button">View all games</a>
+    </section>
+</main>
