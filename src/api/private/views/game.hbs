@@ -1,0 +1,33 @@
+<main>
+    <div id="single-item-img-wrapper">
+        {{#if gamedata.images.coverWide}}
+            <img id="single-item-blur" src="{{gamedata.images.coverWide}}">
+            <img id="single-item-coverwide" src="{{gamedata.images.coverTall}}">
+        {{else}}
+            <img id="single-item-blur" src="{{gamedata.images.coverTall}}">
+            <img id="single-item-coverwide" src="{{gamedata.images.coverTall}}">
+        {{/if}}
+    </div>
+    <section class="main-section">
+        <p class="breadcrumb"><a href="/">Home</a> > <a href="/games">Games</a> > {{gamedata.name}}</p>
+        <h1 class="single-item">{{gamedata.name}}</h1>
+        <p class="single-item">{{gamedata.description}}</p>
+        <hr>
+        <h2 class="single-item">Genres</h2>
+        <div class="genres">
+            {{> genres genres=gamedata.genres}}
+        </div>
+        {{#if gamedata.trailer}}
+            <hr>
+            <h2 class="single-item">Trailer</h2>
+            <div id="single-item-trailer-wrapper">
+                <iframe id="single-item-trailer" src="{{embedHelper gamedata.trailer}}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
+        {{/if}}
+        <hr>
+        {{#if gamedata.products}}
+            <h2 class="single-item">Buy {{gamedata.name}}</h2>
+            {{> prices gamedata = gamedata}}
+        {{/if}}
+    </section>
+</main>

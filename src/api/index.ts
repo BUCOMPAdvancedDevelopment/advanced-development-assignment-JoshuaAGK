@@ -27,6 +27,11 @@ app.get('/games', async (req: any, res: any) => {
     res.render("games", { pageName: "Games" });
 })
 
+// Game page (one specific game by ID)
+app.get('/games/:gameID', async (req: any, res: any) => {
+    res.render("game", { pageName: "Game" });
+})
+
 // Express config
 app.listen(port, () => {
     console.log(`AD Games listening on port ${port}`);
