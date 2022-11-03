@@ -22,6 +22,11 @@ app.get('/', async (req: any, res: any) => {
     res.render("index", { pageName: null });
 })
 
+// Games page
+app.get('/games', async (req: any, res: any) => {
+    res.render("games", { pageName: "Games" });
+})
+
 // Express config
 app.listen(port, () => {
     console.log(`AD Games listening on port ${port}`);

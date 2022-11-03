@@ -1,0 +1,40 @@
+<div id="search-filters">
+    <div class="search-filter">
+        <p>Sort by</p>
+        <select id="search-filter-sort" onchange="searchQuery({keyCode: 13})">
+            <option value="relevance">Relevance</option>
+            <option value="releasedateasc">Release date &#40;ascending&#41;</option>
+            <option value="releasedatedesc">Release date &#40;descending&#41;</option>
+            <option value="priceasc">Price &#40;ascending&#41;</option>
+            <option value="pricedesc">Price &#40;descending&#41;</option>
+        </select>
+    </div>
+    <div class="search-filter">
+        <p>Genre</p>
+        <select id="search-filter-genre" onchange="searchQuery({keyCode: 13})">
+            <option value="all">All</option>
+            <option value="adventure">Adventure</option>
+            <option value="arcade">Arcade</option>
+            <option value="etc">Etc</option>
+        </select>
+    </div>
+    <div class="search-filter">
+        <p>Platform</p>
+        <select id="search-filter-platform" onchange="searchQuery({keyCode: 13})">
+            <option value="all">All</option>
+            <option value="ps4">PlayStation 4</option>
+            <option value="ps5">PlayStation 5</option>
+            <option value="xboxone">Xbox One</option>
+            <option value="xboxseries">Xbox Series X|S</option>
+            <option value="pc">PC</option>
+            <option value="switch">Nintendo Switch</option>
+        </select>
+    </div>
+</div>
+<main>
+    <section class="main-section">
+        <ul id="games-list">
+        </ul>
+        <button id="next-page-btn" onclick="nextPage()" style="display: none">More results</button>
+    </section>
+</main>
