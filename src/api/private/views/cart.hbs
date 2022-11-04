@@ -1,0 +1,51 @@
+<main>
+    <section class="main-section">
+        <h1>My Shopping Cart</h1>
+        {{#if cartdata}}
+        <ul id="cart-list">
+            {{#each cartdata}}
+                <li class="cart-item" productid="{{this.id}}" platform="{{this.platform}}">
+                    <img class="cart-item-image" src="{{this.cover}}"/>
+                    <p class="cart-item-name">{{this.name}}</p>
+                    <div class="cart-item-platform">
+                        {{#if (ifEquals this.platform "ps4")}}
+                            <img class="black-invert" src="/media/bootstrap-icons-1.10.1/playstation.svg"/>
+                        {{/if}}
+                        {{#if (ifEquals this.platform "ps5")}}
+                            <img class="black-invert" src="/media/bootstrap-icons-1.10.1/playstation.svg"/>
+                        {{/if}}
+                        {{#if (ifEquals this.platform "xboxone")}}
+                            <img class="black-invert" src="/media/bootstrap-icons-1.10.1/xbox.svg"/>
+                        {{/if}}
+                        {{#if (ifEquals this.platform "xboxseries")}}
+                            <img class="black-invert" src="/media/bootstrap-icons-1.10.1/xbox.svg"/>
+                        {{/if}}
+                        {{#if (ifEquals this.platform "pc")}}
+                            <img class="black-invert" src="/media/bootstrap-icons-1.10.1/windows.svg"/>
+                        {{/if}}
+                        {{#if (ifEquals this.platform "switch")}}
+                            <img class="black-invert" src="/media/bootstrap-icons-1.10.1/nintendo-switch.svg"/>
+                        {{/if}}
+                        <p>{{getFullPlatformName this.platform}}</p>
+                    </div>
+                    <p class="cart-item-price">{{priceFormat this.price}}</p>
+                    <button class="cart-item-remove" onclick="removeFromCart(this)"><img class="black-invert" src="/media/bootstrap-icons-1.10.1/trash.svg"/></button>
+                </li>
+            {{/each}}
+        </ul>
+        {{else}}
+        <p>Cart is empty</p>
+        {{/if}}
+    </section>
+    {{#if cartdata}}
+        <section class="main-section">
+            <div id="purchase-wrapper">
+                <p>Estimated total: <span id="purchase-total">{{priceFormat (cartDataTotalPrice cartdata)}}</span></p>
+                <button class="purchase-button">Checkout</button>
+            </div>
+        </section>
+
+        <form id="payment-form">
+    </form>
+    {{/if}}
+</main>

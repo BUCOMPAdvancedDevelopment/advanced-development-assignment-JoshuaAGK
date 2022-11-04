@@ -37,6 +37,11 @@ app.get('/about', async (req: any, res: any) => {
     res.render("about", { pageName: "About" });
 })
 
+// Get user's cart items
+app.get('/cart', async (req: any, res: any) => {
+    res.render("cart", { pageName: "Cart" });
+})
+
 // Express config
 app.listen(port, () => {
     console.log(`AD Games listening on port ${port}`);
