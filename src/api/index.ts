@@ -4,6 +4,46 @@ const app = express()
 const port = 3000
 const fs = require('fs');
 const handlebars = require('express-handlebars');
+const mysql = require("mysql");
+
+// Load credentials
+const serviceAccount = require('../config/advanced-development-s5208752-firebase-adminsdk-r1azo-550af01131.json');
+const stripe_creds = require('../config/stripe-credentials.json');
+const sql_creds = require("../config/sql-credentials.json");
+
+// Create SQL connection
+const connection = mysql.createConnection(sql_creds);
+
+// Attempt to connect to SQL database
+// Reconnect up to maximumAttemps times if connection failed
+async function attemptSQLConnection(maximumAttempts: number) {
+    let connectionAttempts = 0;
+
+    const sqlConnection = () => {
+        console.log("Attempting connection to SQL server...");
+        return new Promise<string | void>((resolve, reject) => {
+            connection.connect((error: any) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve();
+                }
+            });
+        })
+    }
+
+    do {
+        try {
+            await sqlConnection();
+            console.log("Connected to SQL server");
+            break;
+        } catch (error: any) {
+            console.error(error);
+        }
+        connectionAttempts++;
+    } while (connectionAttempts < maximumAttempts)
+}
+attemptSQLConnection(2);
 
 // Handlebars config
 app.engine('.hbs', handlebars.engine({
