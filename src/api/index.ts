@@ -5,6 +5,10 @@ const port = 3000
 const fs = require('fs');
 const handlebars = require('express-handlebars');
 const mysql = require("mysql");
+const { initializeApp, applicationDefault, cert } = require('firebase-admin/app');
+const { getFirestore, Timestamp, FieldValue } = require('firebase-admin/firestore');
+const { getAuth } = require('firebase-admin/auth');
+const { firebase } = require('firebase-admin');
 
 // Load credentials
 const serviceAccount = require('../config/advanced-development-s5208752-firebase-adminsdk-r1azo-550af01131.json');
@@ -56,6 +60,13 @@ app.engine('.hbs', handlebars.engine({
         },
     }
 }));
+
+// Firebase config
+initializeApp({
+    credential: cert(serviceAccount)
+});
+const db = getFirestore();
+const auth = getAuth();
 
 // Index page
 app.get('/', async (req: any, res: any) => {    
