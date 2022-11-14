@@ -70,7 +70,30 @@ const auth = getAuth();
 
 // Index page
 app.get('/', async (req: any, res: any) => {    
-    res.render("index", { pageName: null });
+    let params: { featuredItems: Array<any>, displayName?: string, photoURL?: string } = {
+        featuredItems: []
+    }
+
+    // Search Firebase for featured games
+    const gamesRef = db.collection("games");
+    const games = await gamesRef.where('featured', '==', true).get();
+
+    games.forEach((game: any) => {
+        params.featuredItems.push(game.data());
+    });
+
+    // Shuffle order of featured games
+    params.featuredItems = shuffleArray(params.featuredItems);
+
+    try {
+        params.displayName = req.session.user.displayName
+    } catch (error: any) {};
+
+    try {
+        params.photoURL = req.session.user.photoURL
+    } catch (error: any) {};
+
+    res.render("index", params);
 })
 
 // Games page
@@ -113,4 +136,13 @@ function readFile(path: string) {
 			}
 		})
 	})
+}
+
+// Return shuffled array contents
+function shuffleArray(array: Array<any>) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
 }
