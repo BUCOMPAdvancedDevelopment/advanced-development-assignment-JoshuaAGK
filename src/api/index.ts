@@ -98,7 +98,24 @@ app.get('/', async (req: any, res: any) => {
 
 // Games page
 app.get('/games', async (req: any, res: any) => {
-    res.render("games", { pageName: "Games" });
+    const games = await db.collection("games").get();
+
+    let params: { gamedata: Array<any>, photoURL?: string } = {
+        gamedata: []
+    }
+
+    // Get all games from Firebase
+    let foundGames: Array<any> = [];
+    games.forEach((game: any) => {
+        foundGames.push(game.data());
+    });
+    params.gamedata = foundGames;
+
+    try {
+        params.photoURL = req.session.user.photoURL
+    } catch (error: any) {};
+
+    res.render("games", { pageName: "Games", ...params });
 })
 
 // Game page (one specific game by ID)
