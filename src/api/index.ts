@@ -120,7 +120,34 @@ app.get('/games', async (req: any, res: any) => {
 
 // Game page (one specific game by ID)
 app.get('/games/:gameID', async (req: any, res: any) => {
-    res.render("game", { pageName: "Game" });
+    // Firebase query by slug
+    const gamesRef = db.collection("games");
+    const games = await gamesRef.where('slug', '==', req.params.gameID).get();
+
+    let params: { gamedata: any, photoURL?: string } = {
+        gamedata: undefined
+    }
+
+    games.forEach((game: any) => {
+        params.gamedata = game.data();
+    });
+
+    try {
+        params.photoURL = req.session.user.photoURL
+    } catch (error: any) {};
+
+    // Return game data if request is for JSON, otherwise render game page
+    if (req.query.type === "json") {
+        res.json(params.gamedata);
+    } else {
+        if (params.gamedata) {
+            console.log({ pageName: params.gamedata.name, ...params });
+            res.render("game", { pageName: params.gamedata.name, ...params });
+        } else {
+            console.error("No game found with slug", req.params.gameID);
+            res.render("404");
+        }
+    }
 })
 
 // About page
