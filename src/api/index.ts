@@ -182,6 +182,20 @@ function readFile(path: string) {
 	})
 }
 
+// Write content to file
+function writeFile(path: string, content: string) {
+	return new Promise((resolve, reject) => {
+		fs.writeFile(path, content, (err: any) => {
+			if (err) {
+                console.error(err);
+                reject(err);
+            } else {
+                resolve(true);
+            }
+		})
+	})
+}
+
 // Return shuffled array contents
 function shuffleArray(array: Array<any>) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -189,4 +203,81 @@ function shuffleArray(array: Array<any>) {
         [array[i], array[j]] = [array[j], array[i]];
     }
     return array;
+}
+
+// Get Locally-cached copy of entire Firebase database
+app.get('/store_cache', async (req: any, res: any) => {
+	res.json(await getStoreCache());
+})
+
+// Locally-cached copy of entire Firebase database
+// Purpose: Avoid making unecessary reads to Firebase database.
+// REST calls are much cheaper than Firebase queries, plus this helps avoid rate limits
+async function getStoreCache() {
+    let currentTime = Date.now();
+    let store_cache = String(await readFile(__dirname + '/private/data/store_cache.json'));
+
+    if (!store_cache || store_cache == "undefined") {
+        store_cache = await rebuildStoreCache();
+    }
+
+    let data = JSON.parse(store_cache);
+    let timestamp = data[0].last_updated;
+    const cacheTime = 600000; // Caches expire after 600000ms (10 minutes)
+
+    // If cache has expired, rebuild cache
+    if (currentTime - timestamp >= cacheTime) {
+        // Debounce
+        if (currentTime - rebuildLastRun >= rebuildTimeout) {
+            store_cache = String(await rebuildStoreCache());
+            data = JSON.parse(store_cache);    
+        }
+    }
+    return data;
+}
+
+// Rebuilds locally-cached copy of Firebase database
+const rebuildTimeout = 1000;
+let rebuildLastRun = 0;
+async function rebuildStoreCache() {
+    rebuildLastRun = Date.now();
+    console.log("Rebuilding store cache");
+    const games = await db.collection("games").get();
+
+    let foundGames: any[] = [];
+
+    games.forEach((game: any) => {
+        const resultData = game.data();
+
+        let lowestPrice = Infinity;
+        let highestPrice = 0;
+        let platforms = [];
+        let genres = [];
+
+        for (const product of resultData.products) {
+            lowestPrice = Math.min(lowestPrice, product.price);
+            highestPrice = Math.max(highestPrice, product.price);
+            platforms.push(product.platform);
+        }
+
+        for (const genre of resultData.genres) {
+            genres.push(genre.toLowerCase());
+        }
+
+        foundGames.push({
+            name: resultData.name,
+            slug: resultData.slug,
+            image: resultData.images.coverTall,
+            releaseDate: resultData.releaseDate,
+            priceRange: [lowestPrice, highestPrice],
+            platforms,
+            genres
+        });
+    });
+
+    const store_cache = [{last_updated: Date.now()}, ...foundGames];
+
+    // Write entire contents of Firebase database to store_cache file
+    await writeFile(__dirname + '/private/data/store_cache.json', JSON.stringify(store_cache));
+    return JSON.stringify(store_cache);
 }
