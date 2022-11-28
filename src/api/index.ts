@@ -160,6 +160,76 @@ app.get('/cart', async (req: any, res: any) => {
     res.render("cart", { pageName: "Cart" });
 })
 
+// Search for games
+app.get('/search', async (req: any, res: any) => {
+    let responseCode: number = 200;
+	const term = req.query.term || "";
+    const sort = req.query.sort || "relevance";
+    const genre = req.query.genre || "all";
+    const platform = req.query.platform || "all";
+    const pageLen = parseInt(req.query.pagelen) || 5;
+    const from = parseInt(req.query.from) || 0;
+
+    let store_cache = await getStoreCache();
+    store_cache.shift();
+
+    // Genre filter
+    if (genre !== "all") {
+        store_cache = store_cache.filter((item: any) => item.genres.includes(genre));
+    }
+
+    // Platform filter
+    if (platform !== "all") {
+        store_cache = store_cache.filter((item: any) => item.platforms.includes(platform));
+    }
+
+    const results = store_cache.length;
+
+    // Sort results
+    switch (sort) {
+        case "relevance":
+            // Very simple ranked search by game title
+            for (let item of store_cache) {
+                let score = 0;
+                const name = item.name.toLowerCase();
+                const indexSearch = name.indexOf(term.toLowerCase());
+        
+                if (indexSearch == 0) {
+                    score = 3;
+                } else if (indexSearch > 0) {
+                    score = 2;
+                } else {
+                    score = 1;
+                }
+        
+                item.score = score;
+            }
+            store_cache.sort((a: any, b: any) => b.score - a.score);
+            break;
+        case "releasedateasc":
+            store_cache.sort((a: any, b: any) => a.releaseDate - b.releaseDate);
+            break;
+        case "releasedatedesc":
+            store_cache.sort((a: any, b: any) => b.releaseDate - a.releaseDate);
+            break;
+        case "priceasc":
+            store_cache.sort((a: any, b: any) => a.priceRange[0] - b.priceRange[0]);
+            break;
+        case "pricedesc":
+            store_cache.sort((a: any, b: any) => b.priceRange[0] - a.priceRange[0]);
+            break;
+    }
+
+    // Pagination
+    store_cache = store_cache.slice(from, from + pageLen);
+
+    if (store_cache.length == 0) {
+        responseCode = 400;
+    }
+
+    res.status(responseCode).json([{ results }, ...store_cache]);
+})
+
 // Express config
 app.listen(port, () => {
     console.log(`AD Games listening on port ${port}`);
