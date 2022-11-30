@@ -160,6 +160,11 @@ app.get('/cart', async (req: any, res: any) => {
     res.render("cart", { pageName: "Cart" });
 })
 
+// Administration page
+app.get('/admin', async (req: any, res: any) => {
+    res.render("admin", { pageName: "Admin" });
+})
+
 // Search for games
 app.get('/search', async (req: any, res: any) => {
     let responseCode: number = 200;
