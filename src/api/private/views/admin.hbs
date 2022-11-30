@@ -1,0 +1,162 @@
+<script>
+    async function formSubmit(submitButton) {
+        const form = submitButton.closest("form");
+        switch (form.id) {
+            case "create-form":
+                if (submitButton.value == "Save game") {
+                    let products = [];
+
+                    for (platform of platforms) {
+                        if (document.querySelector(`#create-${platform}-enabled`).checked) {
+                            products.push({
+                                msrp: document.querySelector(`#create-${platform}-msrp`).value,
+                                platform: platform,
+                                price: document.querySelector(`#create-${platform}-price`).value,
+                                stock: document.querySelector(`#create-${platform}-stock`).value
+                            })
+                        }
+                    }
+
+                    let releaseDate = String(document.querySelector("#create-date").value);
+                    releaseDate = parseInt(releaseDate.replaceAll("-", ""));
+
+                    const response = await axios.post("/addgame", {
+                        name: document.querySelector("#create-name").value,
+                        slug: document.querySelector("#create-slug").value,
+                        desc: document.querySelector("#create-desc").value,
+                        genres: document.querySelector("#create-genres").value,
+                        coverTall: document.querySelector("#create-cover-tall").value,
+                        coverWide: document.querySelector("#create-cover-wide").value,
+                        pegi: document.querySelector("#create-pegi").value,
+                        date: document.querySelector("#create-date").value,
+                        releaseDate,
+                        studioName: document.querySelector("#create-studio-name").value,
+                        studioUrl: document.querySelector("#create-studio-url").value,
+                        trailer: document.querySelector("#create-trailer").value,
+                        products: products
+                    })
+
+                    console.log(response.data);
+                } else {
+                    const response = await axios.post("/deletegame", {
+                        slug: document.querySelector("#create-slug").value,
+                    })
+
+                    console.log(response.data);
+
+                    if (response.status === 200) {
+                        clearForm();
+                    }
+                }
+
+                break;
+        }
+    }
+
+    // Load game data into editor for updating
+    async function loadGameForUpdate() {
+        const slug = document.querySelector("#update-slug-search").value;
+        const gameData = await axios.get("/games/" + slug + "?type=json");
+        let releaseDate = String(gameData.data.releaseDate);
+        releaseDate = releaseDate.replaceAll("-", "");
+        releaseDate = releaseDate.replace(/(\d{4})(\d{2})(\d{2})/g, '$1-$2-$3');
+
+        document.querySelector("#update-slug-search").value = null;
+        document.querySelector("#create-name").value = gameData.data.name ?? null;
+        document.querySelector("#create-slug").value = gameData.data.slug ?? null;
+        document.querySelector("#create-desc").value = gameData.data.description ?? null;
+        document.querySelector("#create-genres").value = gameData.data.genres ?? null;
+        document.querySelector("#create-cover-tall").value = gameData.data.images.coverTall ?? null;
+        document.querySelector("#create-cover-wide").value = gameData.data.images.coverWide ?? null;
+        document.querySelector("#create-pegi").value = gameData.data.pegi ?? null;
+        document.querySelector("#create-date").value = releaseDate ?? null;
+        document.querySelector("#create-studio-name").value = gameData.data.studio.name ?? null;
+        document.querySelector("#create-studio-url").value = gameData.data.studio.url ?? null;
+        document.querySelector("#create-trailer").value = gameData.data.trailer ?? null;
+
+        for (const product of gameData.data.products) {
+            document.querySelector(`#create-${product.platform}-enabled`).checked = true;
+            document.querySelector(`#create-${product.platform}-msrp`).value = product.msrp;
+            document.querySelector(`#create-${product.platform}-price`).value = product.price;
+            document.querySelector(`#create-${product.platform}-stock`).value = product.stock;
+        }
+    }
+
+    function clearForm() {
+        document.querySelector("#create-form").reset();
+        document.querySelector("#update-slug-search").value = null;
+    }
+</script>
+<main>
+    <h2>Create / Modify / Delete game</h2>
+    <section class="main-section">
+        <input type="text" id="update-slug-search" name="update-slug-search" placeholder="Load Slug"/>
+        <button onclick="loadGameForUpdate()">Load Slug</button>
+        <button onclick="clearForm()">Clear Form</button>
+        <form id="create-form" autocomplete="off">
+            <input type="text" id="create-name" name="create-name" placeholder="Name" required/>
+            <input type="text" id="create-slug" name="create-slug" placeholder="URL Slug" required/>
+            <input type="text" id="create-desc" name="create-desc" placeholder="Description" required/>
+            <input type="text" id="create-genres" name="create-genres" placeholder="Genres" required/>
+            <input type="text" id="create-cover-tall" name="create-cover-tall" placeholder="Image URL (Tall)" required/>
+            <input type="text" id="create-cover-wide" name="create-cover-wide" placeholder="Image URL (Wide)"/>
+            <input type="number" id="create-pegi" name="create-pegi" placeholder="PEGI Age Rating"/>
+            <input type="date" id="create-date" name="create-date" placeholder="Release Date"/>
+            <input type="text" id="create-studio-name" name="create-studio-name" placeholder="Studio Name" required/>
+            <input type="text" id="create-studio-url" name="create-studio-url" placeholder="Studio URL"/>
+            <input type="text" id="create-trailer" name="create-trailer" placeholder="Trailer URL"/>
+            <ul id="create-platform-selector">
+                <li id="create-platform-ps4">
+                    <h3>PlayStation 4</h3>
+                    <input type="checkbox" id="create-ps4-enabled" name="create-ps4-enabled"/>
+                    <label for="create-ps4-enabled">Enabled</label>
+                    <input type="number" id="create-ps4-msrp" name="create-ps4-msrp" placeholder="MSRP"/>
+                    <input type="number" id="create-ps4-price" name="create-ps4-price" placeholder="Price"/>
+                    <input type="number" id="create-ps4-stock" name="create-ps4-stock" placeholder="Stock"/>
+                </li>
+                <li id="create-platform-ps5">
+                    <h3>PlayStation 5</h3>
+                    <input type="checkbox" id="create-ps5-enabled" name="create-ps5-enabled"/>
+                    <label for="create-ps5-enabled">Enabled</label>
+                    <input type="number" id="create-ps5-msrp" name="create-ps5-msrp" placeholder="MSRP"/>
+                    <input type="number" id="create-ps5-price" name="create-ps5-price" placeholder="Price"/>
+                    <input type="number" id="create-ps5-stock" name="create-ps5-stock" placeholder="Stock"/>
+                </li>
+                <li id="create-platform-xboxone">
+                    <h3>Xbox One</h3>
+                    <input type="checkbox" id="create-xboxone-enabled" name="create-xboxone-enabled"/>
+                    <label for="create-xboxone-enabled">Enabled</label>
+                    <input type="number" id="create-xboxone-msrp" name="create-xboxone-msrp" placeholder="MSRP"/>
+                    <input type="number" id="create-xboxone-price" name="create-xboxone-price" placeholder="Price"/>
+                    <input type="number" id="create-xboxone-stock" name="create-xboxone-stock" placeholder="Stock"/>
+                </li>
+                <li id="create-platform-xboxseries">
+                    <h3>Xbox Series X|S</h3>
+                    <input type="checkbox" id="create-xboxseries-enabled" name="create-xboxseries-enabled"/>
+                    <label for="create-xboxseries-enabled">Enabled</label>
+                    <input type="number" id="create-xboxseries-msrp" name="create-xboxseries-msrp" placeholder="MSRP"/>
+                    <input type="number" id="create-xboxseries-price" name="create-xboxseries-price" placeholder="Price"/>
+                    <input type="number" id="create-xboxseries-stock" name="create-xboxseries-stock" placeholder="Stock"/>
+                </li>
+                <li id="create-platform-pc">
+                    <h3>PC</h3>
+                    <input type="checkbox" id="create-pc-enabled" name="create-pc-enabled"/>
+                    <label for="create-pc-enabled">Enabled</label>
+                    <input type="number" id="create-pc-msrp" name="create-pc-msrp" placeholder="MSRP"/>
+                    <input type="number" id="create-pc-price" name="create-pc-price" placeholder="Price"/>
+                    <input type="number" id="create-pc-stock" name="create-pc-stock" placeholder="Stock"/>
+                </li>
+                <li id="create-platform-switch">
+                    <h3>Nintendo Switch</h3>
+                    <input type="checkbox" id="create-switch-enabled" name="create-switch-enabled"/>
+                    <label for="create-switch-enabled">Enabled</label>
+                    <input type="number" id="create-switch-msrp" name="create-switch-msrp" placeholder="MSRP"/>
+                    <input type="number" id="create-switch-price" name="create-switch-price" placeholder="Price"/>
+                    <input type="number" id="create-switch-stock" name="create-switch-stock" placeholder="Stock"/>
+                </li>
+            </ul>
+            <input type="submit" onclick="formSubmit(this)" value="Save game">
+            <input type="submit" onclick="formSubmit(this)" value="Delete game">
+        </form>
+    </section>
+</main>
