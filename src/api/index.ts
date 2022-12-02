@@ -261,6 +261,115 @@ app.use(express.static(__dirname + "/public"));
 app.set('view engine', 'hbs');
 app.set('views', __dirname + '\\private\\views\\');
 
+// Add new game to Firebase database, or overwrite if already exists
+app.post('/addgame', async (req: any, res: any) => {
+    // Check user is logged in
+    if (!req.session.loggedin) {
+        res.status(401).send(`Not logged in`);
+        return;
+    }
+
+    // Check user is administrator
+    try {
+        await checkIfUserIsAdmin(req.session.user.uid);
+    } catch (error) {
+        res.status(403).send(`Not an administrator`);
+        return;
+    }
+
+    let responseCode: number = 200;
+    let products = [];
+
+    // Array of products relating to the game
+    // "product" == "SKU"
+    for (const product of req.body.products) {
+        products.push({
+            msrp: parseInt(product.msrp),
+            platform: product.platform,
+            price: parseInt(product.price),
+            stock: parseInt(product.stock)
+        })
+    }
+
+    const gameData = {
+        description: req.body.desc,
+        genres: req.body.genres.replace(", ", ",").split(","),
+        images: {
+            coverTall: req.body.coverTall,
+            coverWide: req.body.coverWide ?? req.body.coverTall
+        },
+        name: req.body.name,
+        pegi: parseInt(req.body.pegi) ?? null,
+        releaseDate: req.body.releaseDate,
+        slug: req.body.slug,
+        studio: {
+            name: req.body.studioName,
+            url: req.body.studioUrl
+        },
+        trailer: req.body.trailer,
+        products: products
+    }
+
+    // Search for existing game with matching slug
+    const gamesRef = db.collection("games");
+    const query = gamesRef.where('slug', '==', req.body.slug);
+    const snapshot = await query.count().get();
+    const count = await snapshot.data().count;
+
+    // Update game if exists
+    if (count < 1) {
+        try {
+            await gamesRef.doc().set(gameData);
+            res.status(responseCode).send(`Item '${req.body.slug}' added`);
+        } catch (error: any) {
+            responseCode = 400;
+            res.status(responseCode).send(`Error adding item: ${error}`);
+        }
+    // Add game if not exists
+    } else {
+        const games = await query.get();
+        await games.forEach(async (game: any) => {
+            try {
+                await gamesRef.doc(game.id).update(gameData);
+                res.status(responseCode).send(`Item '${req.body.slug}' updated`);
+            } catch (error: any) {
+                responseCode = 400;
+                res.status(responseCode).send(`Error updating item: ${error}`);
+            }
+        });
+    }
+})
+
+// Delete game from Firebase database
+app.post('/deletegame', async (req: any, res: any) => {
+    // Check user is logged in
+    if (!req.session.loggedin) {
+        res.status(401).send(`Not logged in`);
+        return;
+    }
+
+    // Check user is administrator
+    try {
+        await checkIfUserIsAdmin(req.session.user.uid);
+    } catch (error) {
+        res.status(403).send(`Not an administrator`);
+        return;
+    }
+
+    // Firebase search
+    const gamesRef = db.collection("games");
+    const games = await gamesRef.where('slug', '==', req.body.slug).get();
+
+    games.forEach(async (game: any) => {
+        try {
+            await game.ref.delete()
+            res.status(200).send(`Item '${req.body.slug}' deleted`);
+        } catch (error: any) {
+            res.status(400).send(`Error deleting item '${req.body.slug}'`);
+        }
+    });
+})
+
 // Return contents of file
 function readFile(path: string) {
 	return new Promise<string>((resolve, reject) => {
