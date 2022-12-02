@@ -162,7 +162,25 @@ app.get('/cart', async (req: any, res: any) => {
 
 // Administration page
 app.get('/admin', async (req: any, res: any) => {
-    res.render("admin", { pageName: "Admin" });
+    if (!req.session.loggedin) {
+        req.session.forward = "/admin";
+        req.session.save();
+        res.redirect("authwall");
+        return;
+    }
+
+    let params: { photoURL?: string } = {}
+
+    try {
+        params.photoURL = req.session.user.photoURL;
+    } catch (error: any) {};
+
+    try {
+        await checkIfUserIsAdmin(req.session.user.uid);
+        res.render("admin", { pageName: "Admin", ...params});
+    } catch (error) {
+        res.redirect("/");
+    }
 })
 
 // Search for games
@@ -355,4 +373,22 @@ async function rebuildStoreCache() {
     // Write entire contents of Firebase database to store_cache file
     await writeFile(__dirname + '/private/data/store_cache.json', JSON.stringify(store_cache));
     return JSON.stringify(store_cache);
+}
+
+// Resolve if user is administrator
+async function checkIfUserIsAdmin(uid: string) {
+    return new Promise<boolean>((resolve, reject) => {
+        const sql = `SELECT * FROM administrators WHERE UID = ${mysql.escape(uid)}`;
+        connection.query(sql, async (error: any, result: any) => {
+            if (error) {
+                reject(false);
+            }
+
+            if (result.length >= 1) {
+                resolve(true);
+            }
+
+            reject(false);
+        });
+	})
 }
