@@ -183,6 +183,11 @@ app.get('/admin', async (req: any, res: any) => {
     }
 })
 
+// Login page
+app.get('/authwall', async (req: any, res: any) => {
+    res.render("authwall", { pageName: "Auth Wall" });
+})
+
 // Search for games
 app.get('/search', async (req: any, res: any) => {
     let responseCode: number = 200;
