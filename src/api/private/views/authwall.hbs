@@ -1,0 +1,63 @@
+<script>
+    async function formSubmit(form) {
+        if (form.id === "signin-form") {
+            const email = document.querySelector("#signin-email").value;
+            const password = document.querySelector("#signin-pass").value;
+            let cred = await auth.signInWithEmailAndPassword(email, password);
+            let user = cred.user;
+
+            let response = await axios.post("/storeUser", {
+                user: JSON.stringify(user)
+            }, {
+                validateStatus: false
+            })
+
+            if (response.status === 301) {
+                window.location.href = response.data;
+            }
+
+            console.log(response.data);
+            console.log(response.status);
+        } else {
+            const email = document.querySelector("#signup-email").value;
+            const password = document.querySelector("#signup-pass").value;
+            let cred = await auth.createUserWithEmailAndPassword(email, password);
+            console.log(cred);
+
+            let user = cred.user;
+
+            let response = await axios.post("/storeUser", {
+                user: JSON.stringify(user)
+            }, {
+                validateStatus: false
+            })
+
+            if (response.status === 301) {
+                window.location.href = response.data;
+            }
+
+            console.log(response.data);
+            console.log(response.status);
+        }
+    }
+</script>
+<main>
+    <section class="main-section">
+        <h1>Authenticate</h1>
+        <h2>Sign up</h2>
+        <form id="signup-form" class="main-card" onsubmit="formSubmit(this);return false">
+            <input type="email" id="signup-email" name="signup-email" placeholder="Email" required/>
+            <input type="password" id="signup-pass" name="signup-pass" placeholder="Password" required/>
+            <input type="submit" value="Sign up">
+        </form>
+    </section>
+    <section class="main-section">
+        <h2>Log in</h2>
+        <form id="signin-form" class="main-card" onsubmit="formSubmit(this)">
+            <input type="email" id="signin-email" name="signin-email" placeholder="Email" required/>
+            <input type="password" id="signin-pass" name="signin-pass" placeholder="Password" required/>
+            <input type="submit" value="Sign in">
+        </form>
+    </section>
+    <button id="signin-google" onclick="signingoogle()"><img src="media/pictures/btn_google_signin_dark_normal_web@2x.png"/></button>
+</main>
