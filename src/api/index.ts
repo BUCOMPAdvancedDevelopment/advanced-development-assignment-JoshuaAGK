@@ -54,10 +54,86 @@ app.engine('.hbs', handlebars.engine({
     extname: ".hbs",
     defaultLayout: "main",
     helpers: {
+        // Grabs the video ID from a YouTube link and convert it into an embed link
+        embedHelper: (url: string) => {
+            if (url.includes("youtube.com")) {
+                return `https://www.youtube.com/embed/${url.split("?v=").pop()}`;
+            }
+            if (url.includes("youtu.be")) {
+                return `https://www.youtube.com/embed/${url.split("/").pop()}`;
+            }
+            return url;
+        },
         // Return true if items equal
         ifEquals: (item1: any, item2: any) => {
             return item1 == item2;
         },
+        // Return true if either item equal
+        logicalOr: (item1: any, item2: any) => {
+            return (item1 || item2);
+        },
+        // Return true if any object in array has specified key/value pair
+        anyInArrayHasKeyValue: (array: [], key: string | number, value: any) => {
+            for (const item of array) {
+                if (item[key] == value) { return true; }
+            }
+            return false;
+        },
+        // Format number of pennies as "£XX.XX" string
+        priceFormat: (num: number | string, size: number = 3, after: boolean = true) => {
+            num = String(num);
+            while (num.length < size) {
+                num = after ? num + "0" : "0" + num;
+            }
+            return "£" + num.substring(0, num.length-  2) + "." + num.substring(num.length - 2);
+        },
+        // Return difference between two numbers
+        difference: (num1: number, num2: number) => {
+            return Math.abs(num1 - num2);
+        },
+        // Return alphabetically-sorted array of all keys from input object
+        sortDictAlphabetically: (dict: object) => {
+            let sorted = Object.keys(dict);
+            sorted.sort();
+            return sorted;
+        },
+        // Return price (as number) of lowest-price product
+        lowestPriceFromProducts: (products: Array<any>) => {
+            let prices = products.map(x => x.price ?? 0);
+            prices.sort((a: any, b: any) => a - b);
+            return prices[0];
+        },
+        // Return price (as number) of highest-price product
+        highestPriceFromProducts: (products: Array<any>) => {
+            let prices = products.map(x => x.price);
+            prices.sort((a: any, b: any) => a - b);
+            return prices[prices.length - 1];
+        },
+        // Convert string to title case
+        // e.g. "thIS is a StrINg" -> "This Is A String"
+        titleCase: (string: string) => {
+            return string.replace(/\w\S*/g, (text) => {
+                return text.charAt(0).toUpperCase() + text.substring(1).toLowerCase();
+            });
+        },
+        // Get full name of game platform
+        // e.g. "ps4" -> "PlayStation 4"
+        getFullPlatformName: (shortname: string) => {
+            return getFullPlatformName(shortname);
+        },
+        // Total price of all items in user cart
+        cartDataTotalPrice: (cartdata: any) => {
+            let totalPrice = 0;
+            for (const item of cartdata) {
+                totalPrice += item.price;
+            }
+            return totalPrice;
+        },
+        // Split string on char, returning specified segment
+        splitString: (inputString: string, splitChar: string, segment: number) => {
+            const splitString = inputString.split(splitChar);
+            return splitString[segment];
+        }
     }
 }));
 
