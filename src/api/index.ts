@@ -185,7 +185,17 @@ app.get('/admin', async (req: any, res: any) => {
 
 // Login page
 app.get('/authwall', async (req: any, res: any) => {
-    res.render("authwall", { pageName: "Auth Wall" });
+    // Forward user if already logged in
+    if (req.session.loggedin) {
+        const forward = req.session.forward;
+        if (forward) {
+            res.redirect(forward);
+        } else {
+            res.redirect("back");
+        }
+    } else {
+        res.render("authwall", { pageName: "Auth Wall" });
+    }
 })
 
 // Search for games
