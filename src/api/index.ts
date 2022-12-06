@@ -516,3 +516,92 @@ async function checkIfUserIsAdmin(uid: string) {
         });
 	})
 }
+
+// Stripe config
+const stripe = require("stripe")(stripe_creds.privateKey);
+
+app.post("/create-checkout-session", async (req: any, res: any) => {
+    if (!req.session.loggedin) {
+        res.status(401).send("Not logged in");
+        return;
+    }
+
+    const uid = req.session.user.uid;
+
+    let cartItems: Array<any> = [];
+    let metadata: any = {};
+
+    const sql = `SELECT * FROM carts WHERE UID = '${uid}';`;
+    await connection.query(sql, async (error: any, result: any) => {
+        if (error) {
+            console.log(error);
+            return;
+        }
+
+        for (const item of result) {
+            const docRef = db.collection("games").doc(item.ProductID);
+            const doc = await docRef.get();
+            const docData = doc.data();
+
+            if (!docData) {
+                continue;
+            }
+
+            const docProducts = docData.products;
+            const docProduct = docProducts.filter((product: any) => product.platform == item.ProductPlatform)[0];
+            
+            cartItems.push({
+                price_data: {
+                    currency: 'gbp',
+                    product_data: {
+                        name: docData.name + " - " + getFullPlatformName(item.ProductPlatform)
+                    },
+                    unit_amount: docProduct.price
+                },
+                quantity: 1
+            })
+
+            metadata[item.ProductID + "/-/" + item.ProductPlatform] = String(docProduct.price) + "/-/" + docData.name;
+        }
+
+        try {
+            const params = {
+                payment_method_types: ['card'],
+                mode: 'payment',
+                success_url: req.protocol + '://' + req.get('host') + "/success",
+                cancel_url: req.protocol + '://' + req.get('host') + "/cart",
+                line_items: cartItems,
+                metadata: metadata
+            };
+
+            console.log(params);
+
+            const session = await stripe.checkout.sessions.create(params)
+            req.session.stripeSessionId = session.id;
+            req.session.save();
+            res.status(301).send(session.url);
+        } catch (error: any) {
+            console.log(error);
+            res.status(500).send(error);
+        }
+    });
+});
+
+// Return full name of platform from short name
+// e.g. "xboxone" -> "Xbox One"
+function getFullPlatformName(shortname: string) {
+    const platforms: any = {
+        "ps4": "PlayStation 4",
+        "ps5": "PlayStation 5",
+        "xboxone": "Xbox One",
+        "xboxseries": "Xbox Series X|S",
+        "pc": "PC",
+        "switch": "Nintendo Switch"
+    }
+
+    if (platforms.hasOwnProperty(shortname)) {
+        return platforms[shortname];
+    }
+
+    return shortname;
+}
