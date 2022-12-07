@@ -1,0 +1,29 @@
+<main>
+    <section class="main-section">
+        <p class="breadcrumb"><a href="/">Home</a> > 404</p>
+        <h1>404</h1>
+        <p>Sorry, couldn't find that page!</p>
+        <hr>
+        <p>Taking you back home in 5... 4... 3... 2... 1...</p>
+        <hr class="go-back-home">
+        <p class="go-back-home">Still here?</p>
+        <a class="go-back-home" style="text-decoration: underline;" href="/">Click here to go back home.</a>
+    </section>
+</main>
+<style>
+    .go-back-home {
+        display: none;
+    }
+</style>
+<script>
+    // Load homepage after 5 seconds
+    const delay = ms => new Promise(res => setTimeout(res, ms));
+    window.addEventListener("load", async () => {
+        await delay(5000);
+        window.location.href = "/";
+        await delay(2000);
+        for (element of document.querySelectorAll(".go-back-home")) {
+            element.style.display = "block";
+        }
+    }, false); 
+</script>

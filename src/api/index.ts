@@ -799,3 +799,8 @@ function priceFormat(num: any, size = 3, after = true) {
     }
     return "£" + num.substring(0, num.length-  2) + "." + num.substring(num.length - 2);
 }
+
+// Catch 404's
+app.get('*', function(req: any, res: any){
+    res.render("404");
+});
