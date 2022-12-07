@@ -9,6 +9,7 @@ const { initializeApp, applicationDefault, cert } = require('firebase-admin/app'
 const { getFirestore, Timestamp, FieldValue } = require('firebase-admin/firestore');
 const { getAuth } = require('firebase-admin/auth');
 const { firebase } = require('firebase-admin');
+const axios = require("axios");
 
 // Load credentials
 const serviceAccount = require('../config/advanced-development-s5208752-firebase-adminsdk-r1azo-550af01131.json');
@@ -681,3 +682,53 @@ function getFullPlatformName(shortname: string) {
 
     return shortname;
 }
+
+// Success page loaded after successful transaction
+app.get('/success', async (req: any, res: any) => {
+    // Check user is logged in and has a payment session in progress
+    if (!req.session.loggedin || !req.session.stripeSessionId) {
+        res.redirect("/");
+        return;
+    }
+
+    const sessionId: string = req.session.stripeSessionId;
+
+    let params: { gamedata: Array<any>, metadata?: any, photoURL?: string } = {
+        gamedata: []
+    }
+
+    const apilink = "https://api.stripe.com/v1/checkout/sessions/" + sessionId;
+
+    // Get payment session details from Stripe
+    const session = await axios.get(apilink, {
+        headers: {
+            Authorization: `Bearer ${stripe_creds.privateKey}`
+        }
+    });
+
+    // Verify session is paid
+    if (session.data.status === "complete") {    
+        for (const key of Object.keys(session.data.metadata)) {
+            const uid = req.session.user.uid;
+            const value = session.data.metadata[key];
+            const price = parseInt(value.split("/-/")[0])
+            const itemID = key.split("/-/")[0];
+            const itemPlatform = key.split("/-/")[1];
+            // Move items from 'cart' to 'purchases'
+            await connection.query(`DELETE FROM carts WHERE UID = ${mysql.escape(uid)}' AND ProductID = ${mysql.escape(itemID)} AND ProductPlatform = ${mysql.escape(itemPlatform)};`, async (error: any, result: any) => {});
+            await connection.query(`INSERT INTO purchases (UID, ProductID, ProductPlatform, Price) VALUES (${mysql.escape(uid)}, ${mysql.escape(itemID)}, ${mysql.escape(itemPlatform)}, ${mysql.escape(price)})`, async (error: any, result: any) => {});
+            try {
+                params.metadata = session.data.metadata
+            } catch (error: any) {};
+            // Clear payment session
+            req.session.stripeSessionId = null;
+            req.session.metadata = null;
+        }
+    }
+
+    try {
+        params.photoURL = req.session.user.photoURL
+    } catch (error: any) {};
+    
+    res.render("success", { pageName: "Success", ...params });
+})
