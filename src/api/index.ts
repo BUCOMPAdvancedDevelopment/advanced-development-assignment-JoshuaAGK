@@ -800,6 +800,82 @@ function priceFormat(num: any, size = 3, after = true) {
     return "£" + num.substring(0, num.length-  2) + "." + num.substring(num.length - 2);
 }
 
+// Add item to user's cart
+app.post('/addtocart', async (req: any, res: any) => {
+    let responseCode: number = 200;
+    
+    // Check user is logged in
+    if (req.session.loggedin) {
+        const platform: string = req.body.platform;
+        const slug: string = req.body.slug;
+        const uid: string = req.session.user.uid;
+        let gameID: string = undefined;
+
+        // Firebase search for game by slug
+        const gamesRef = db.collection("games");
+        const query = gamesRef.where('slug', '==', slug);
+        const snapshot = await query.count().get();
+        const count = await snapshot.data().count;
+        
+        // Add to cart if exists
+        if (count < 1) {
+            responseCode = 404;
+            res.status(responseCode).send(`Error adding item '${slug}' to cart, unable to find item`);
+        } else {
+            const games = await query.get();
+            await games.forEach(async (game: any) => {
+                gameID = game.id;
+            });
+        }
+
+        // Add item to carts table in SQL database
+        const sql = `INSERT INTO carts VALUES (${mysql.escape(uid)}, ${mysql.escape(gameID)}, ${mysql.escape(platform)});`;
+        connection.query(sql, (error: any, result: any) => {
+            if (error) {
+                responseCode = 400;
+                if (error.code == "ER_DUP_ENTRY") {
+                    res.status(responseCode).send(`Error adding item '${slug}' to cart, item already in cart`);
+                } else {
+                    res.status(responseCode).send(`Error adding item '${slug}' to cart, ${error.code}`);
+                }
+                return;
+            }
+
+            res.status(responseCode).send(`Added item '${slug}' to cart`);
+        });
+    } else {
+        responseCode = 401;
+        res.status(responseCode).send("Not logged in");
+    }
+})
+
+// Remove item from user cart
+app.post('/removefromcart', async (req: any, res: any) => {
+    let responseCode: number = 200;
+    
+    // Check user is logged in
+    if (req.session.loggedin) {
+        const platform: string = req.body.itemPlatform;
+        const id: string = req.body.itemID;
+        const uid: string = req.session.user.uid;
+
+        // Delte item from carts table in SQL database
+        const sql = `DELETE FROM carts WHERE UID = ${mysql.escape(uid)} AND ProductID = ${mysql.escape(id)} AND ProductPlatform = ${mysql.escape(platform)}`;
+        connection.query(sql, (error: any, result: any) => {
+            if (error) {
+                responseCode = 400;
+                res.status(responseCode).send(`Unable to remove item from cart`);
+                return;
+            }
+
+            res.status(responseCode).send(`Item removed from cart:${id}:${platform}`);
+        });
+    } else {
+        responseCode = 401;
+        res.status(responseCode).send("Not logged in");
+    }
+})
+
 // Catch 404's
 app.get('*', function(req: any, res: any){
     res.render("404");
