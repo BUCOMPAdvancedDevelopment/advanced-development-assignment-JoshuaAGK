@@ -1,0 +1,15 @@
+<main>
+    <section class="main-section">
+        <h1>Order successful!</h1>
+        <p>Thank you for your purchase!</p>
+        <p>The following items have been added to your library:</p>
+        <hr>
+        <ul class="bullet-list">
+            {{#each metadata}}
+                <li>{{splitString this "/-/" 1}} - {{getFullPlatformName (splitString @key "/-/" 1)}}</li>
+            {{/each}}
+        </ul>
+        <hr>
+        <p>Visit <a style="text-decoration: underline"; href="/account">my account</a> to see all of your past purchases.</p>
+    </section>
+</main>
