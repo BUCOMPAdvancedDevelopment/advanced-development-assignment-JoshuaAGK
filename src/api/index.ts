@@ -732,3 +732,70 @@ app.get('/success', async (req: any, res: any) => {
     
     res.render("success", { pageName: "Success", ...params });
 })
+
+async function addToCart(e: any) {
+    const platform = e.attributes.platform.value;
+    const slug = e.attributes.slug.value;
+
+
+    const response = await axios.post("../addtocart", {
+        platform,
+        slug
+    }, {
+        validateStatus: false
+    })
+
+    switch (response.status) {
+        case 401:
+            window.location.href = '/authwall';
+            break;
+        case 400:
+            if (response.data.includes("already in cart")) {
+                alert("Item already in cart");
+            }
+            break;
+        case 200:
+            alert("Item added to cart");
+            break;
+    }
+
+    console.log(response);
+}
+
+async function removeFromCart(e: any) {
+    const parentNode = e.parentNode;
+    const itemID = parentNode.attributes.productid.value;
+    const itemPlatform = parentNode.attributes.platform.value;
+
+    const response = await axios.post("../removefromcart", {
+        itemID,
+        itemPlatform
+    }, {
+        validateStatus: false
+    })
+
+    if (response.status == 200) {
+        const cartItems = document.querySelectorAll(".cart-item").length;
+        if (cartItems <= 1) {
+            location.reload();
+        } else {
+            parentNode.remove();
+            const newCartItems = document.querySelectorAll(".cart-item");
+            let newTotalPrice = 0;
+            for (const item of newCartItems) {
+                let priceStr = item.querySelector(".cart-item-price").innerHTML;
+                priceStr = priceStr.replace(/\D/g,'');
+                newTotalPrice += parseInt(priceStr);
+            }
+            document.querySelector("#purchase-total").innerHTML = priceFormat(newTotalPrice);
+        }
+    }
+}
+
+function priceFormat(num: any, size = 3, after = true) {
+    num = String(num);
+    while (num.length < size) {
+        num = after ? num + "0" : "0" + num;
+    }
+    return "£" + num.substring(0, num.length-  2) + "." + num.substring(num.length - 2);
+}
