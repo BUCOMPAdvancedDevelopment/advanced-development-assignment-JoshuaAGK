@@ -876,6 +876,30 @@ app.post('/removefromcart', async (req: any, res: any) => {
     }
 })
 
+// Change user details (username, avatar)
+app.post('/changedetails', async (req: any, res: any) => {
+    let responseCode: number = 200;
+    const uname: string = req.body.uname || null;
+    const photoURL: string = req.body.photoURL;
+    const uid: any = req.session.user.uid;
+
+    let updates: { displayName?: string, photoURL?: string } = {};
+
+    if (uname) {
+        updates.displayName = uname;
+    }
+
+    if (photoURL) {
+        updates.photoURL = photoURL;
+    }
+
+    const user = await getAuth().updateUser(uid, updates)
+    
+    req.session.user = user;
+    req.session.save();
+    res.status(responseCode).send("Success");
+})
+
 // Catch 404's
 app.get('*', function(req: any, res: any){
     res.render("404");
