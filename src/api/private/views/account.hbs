@@ -1,0 +1,39 @@
+<main>
+    <section class="main-section">
+        <p class="breadcrumb"><a href="/">Home</a> > Account</p>
+        <h1>My account</h1>
+    </section>
+    <section class="main-section">
+        <h2>Profile picture</h2>
+        <div class="main-card">
+            {{#if photoURL}}
+                <img id="account-photo" src="{{photoURL}}"/>
+            {{else}}
+                <img id="account-photo" src="/media/bootstrap-icons-1.10.1/person-circle.svg"/>
+            {{/if}}
+            <input id="account-photourl" name="account-photourl" type="text" value="{{photoURL}}"/>
+            <button onclick="setPhotoURL()">Save</button>
+        </div>
+        <hr>
+        <h2>Username</h2>
+        <div class="main-card">
+            <input id="account-uname" name="account-uname" type="text" value="{{displayName}}"/>
+            <button onclick="setUsername()">Save</button>
+        </div>
+    </section>
+    {{#if purchases}}
+    <section class="main-section" id="past-purchases">
+        <h2>My purchases</h2>
+        <ul class="main-card" style="align-items: flex-start;">
+            {{#each purchases}}
+                <li>
+                    {{this.name}} - {{getFullPlatformName this.platform}} - {{priceFormat this.price}}
+                </li>
+            {{/each}}
+        </ul>
+    </section>
+    {{/if}}
+    <section class="main-section">
+        <button id="sign-out-btn" class="big-center-button" onclick="signOut()">Sign out</button>
+    </section>
+</main>
