@@ -900,6 +900,28 @@ app.post('/changedetails', async (req: any, res: any) => {
     res.status(responseCode).send("Success");
 })
 
+// Store user details after successful login
+app.post('/storeUser', async (req: any, res: any) => {
+    const user: any = req.body.user;
+    const forward: string = req.session.forward;
+    const userObject: any = JSON.parse(user);
+    req.session.user = userObject;
+    req.session.loggedin = true;
+    req.session.save();
+    // Forward user to saved forward state if applicable
+    if (forward) {
+        res.status(301).send(forward);
+    } else {
+        res.status(301).send("/");
+    }
+})
+
+// Sign user out
+app.post('/signout', async (req: any, res: any) => {
+    req.session.destroy();
+    res.status(200).send("Session destroyed");
+})
+
 // Catch 404's
 app.get('*', function(req: any, res: any){
     res.render("404");
