@@ -1,0 +1,44 @@
+<ul id="single-item-purchase">
+    {{#each gamedata.products}}
+        <li class="single-item-puchase-box">
+            <div class="platform-name">
+                {{#if (ifEquals this.platform "ps4")}}
+                    <img src="/media/bootstrap-icons-1.10.1/playstation.svg"/>
+                    <p>PlayStation 4</p>
+                {{/if}}
+                {{#if (ifEquals this.platform "ps5")}}
+                    <img src="/media/bootstrap-icons-1.10.1/playstation.svg"/>
+                    <p>PlayStation 5</p>
+                {{/if}}
+                {{#if (ifEquals this.platform "xboxone")}}
+                    <img src="/media/bootstrap-icons-1.10.1/xbox.svg"/>
+                    <p>Xbox One</p>
+                {{/if}}
+                {{#if (ifEquals this.platform "xboxseries")}}
+                    <img src="/media/bootstrap-icons-1.10.1/xbox.svg"/>
+                    <p>Xbox Series X|S</p>
+                {{/if}}
+                {{#if (ifEquals this.platform "pc")}}
+                    <img src="/media/bootstrap-icons-1.10.1/windows.svg"/>
+                    <p>PC</p>
+                {{/if}}
+                {{#if (ifEquals this.platform "switch")}}
+                    <img src="/media/bootstrap-icons-1.10.1/nintendo-switch.svg"/>
+                    <p>Nintendo Switch</p>
+                {{/if}}
+            </div>
+
+            {{#if (ifEquals this.price this.msrp)}}
+                <p class="product-price">{{priceFormat this.price}}</p>
+            {{else}}
+                <p class="product-price">{{priceFormat this.price}}<span class="old-price"><span class="strikethrough">{{priceFormat this.msrp}}</span><span> SAVE {{priceFormat (difference this.msrp this.price)}}!</span></span></p>
+            {{/if}}
+
+            {{#if this.stock}}
+                <button type="button" class="product-cart" slug="{{../gamedata.slug}}" platform="{{this.platform}}" onclick="addToCart(this)">Add to cart</button>
+            {{else}}
+                <button type="button" disabled class="product-cart disabled">Out of stock</button>
+            {{/if}}
+        </li>
+    {{/each}}
+</ul>
