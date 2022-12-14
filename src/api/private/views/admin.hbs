@@ -1,3 +1,4 @@
+<script src="/socket.io/socket.io.js"></script>
 <script>
     async function formSubmit(submitButton) {
         const form = submitButton.closest("form");
@@ -86,14 +87,74 @@
         document.querySelector("#create-form").reset();
         document.querySelector("#update-slug-search").value = null;
     }
+
+    var socket = io();
+
+    function ordinal(date) {
+        if (date > 3 && date < 21) {
+            return 'th';
+        }
+
+        switch (date % 10) {
+            case 1:
+                return "st";
+            case 2:
+                return "nd";
+            case 3:
+                return "rd";
+            default:
+                return "th";
+        }
+    }
+
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+    function zeroPad(num, size = 2, after = false) {
+        num = String(num);
+        while (num.length < size) {
+            num = after ? num + "0" : "0" + num;
+        }
+        return num;
+    }
+
+    socket.on('contact-message', function(messageData) {
+        const messagesElement = document.querySelector("#contact-messages");
+        let listItem = document.createElement("li");
+        listItem.className = "contact-message";
+        listItem.id = messageData.key;
+        const messageDate = new Date(messageData.timestamp);
+        const date = messageDate.getDate();
+        const month = messageDate.getMonth();
+        const year = messageDate.getFullYear();
+        const hours = zeroPad(messageDate.getHours());
+        const minutes = zeroPad(messageDate.getMinutes());
+
+        listItem.innerHTML += `<p>${date}${ordinal(date)} ${months[month].substring(0, 3)} ${year}, ${hours}:${minutes}</p>`;
+        listItem.innerHTML += `<p>${messageData.message}</p>`;
+        listItem.innerHTML += `<button onclick="deleteMessage('${messageData.key}')"><img src="/media/bootstrap-icons-1.10.1/trash.svg"></button>`;
+        listItem.innerHTML += `<p><b>From: </b>${messageData.email}</p>`;
+        messagesElement.appendChild(listItem);
+    });
+
+    async function deleteMessage(id) {
+        const response = await axios.post("/deletemessage", { id })
+
+        console.log(response.data);
+
+        if (response.status === 200) {
+            const messageElement = document.querySelector(`#${id}`);
+            messageElement.remove();
+        }
+    }
+
 </script>
 <main>
-    <h2>Create / Modify / Delete game</h2>
     <section class="main-section">
+        <h2>Create / Modify / Delete game</h2>
         <input type="text" id="update-slug-search" name="update-slug-search" placeholder="Load Slug"/>
-        <button onclick="loadGameForUpdate()">Load Slug</button>
-        <button onclick="clearForm()">Clear Form</button>
-        <form id="create-form" autocomplete="off">
+        <button class="purchase-button" onclick="loadGameForUpdate()">Load Slug</button>
+        <button class="purchase-button" onclick="clearForm()">Clear Form</button>
+        <form id="create-form" autocomplete="off" class="create-platform-card">
             <input type="text" id="create-name" name="create-name" placeholder="Name" required/>
             <input type="text" id="create-slug" name="create-slug" placeholder="URL Slug" required/>
             <input type="text" id="create-desc" name="create-desc" placeholder="Description" required/>
@@ -106,7 +167,7 @@
             <input type="text" id="create-studio-url" name="create-studio-url" placeholder="Studio URL"/>
             <input type="text" id="create-trailer" name="create-trailer" placeholder="Trailer URL"/>
             <ul id="create-platform-selector">
-                <li id="create-platform-ps4">
+                <li id="create-platform-ps4" class="main-card create-platform-card">
                     <h3>PlayStation 4</h3>
                     <input type="checkbox" id="create-ps4-enabled" name="create-ps4-enabled"/>
                     <label for="create-ps4-enabled">Enabled</label>
@@ -114,7 +175,7 @@
                     <input type="number" id="create-ps4-price" name="create-ps4-price" placeholder="Price"/>
                     <input type="number" id="create-ps4-stock" name="create-ps4-stock" placeholder="Stock"/>
                 </li>
-                <li id="create-platform-ps5">
+                <li id="create-platform-ps5" class="main-card create-platform-card">
                     <h3>PlayStation 5</h3>
                     <input type="checkbox" id="create-ps5-enabled" name="create-ps5-enabled"/>
                     <label for="create-ps5-enabled">Enabled</label>
@@ -122,7 +183,7 @@
                     <input type="number" id="create-ps5-price" name="create-ps5-price" placeholder="Price"/>
                     <input type="number" id="create-ps5-stock" name="create-ps5-stock" placeholder="Stock"/>
                 </li>
-                <li id="create-platform-xboxone">
+                <li id="create-platform-xboxone" class="main-card create-platform-card">
                     <h3>Xbox One</h3>
                     <input type="checkbox" id="create-xboxone-enabled" name="create-xboxone-enabled"/>
                     <label for="create-xboxone-enabled">Enabled</label>
@@ -130,7 +191,7 @@
                     <input type="number" id="create-xboxone-price" name="create-xboxone-price" placeholder="Price"/>
                     <input type="number" id="create-xboxone-stock" name="create-xboxone-stock" placeholder="Stock"/>
                 </li>
-                <li id="create-platform-xboxseries">
+                <li id="create-platform-xboxseries" class="main-card create-platform-card">
                     <h3>Xbox Series X|S</h3>
                     <input type="checkbox" id="create-xboxseries-enabled" name="create-xboxseries-enabled"/>
                     <label for="create-xboxseries-enabled">Enabled</label>
@@ -138,7 +199,7 @@
                     <input type="number" id="create-xboxseries-price" name="create-xboxseries-price" placeholder="Price"/>
                     <input type="number" id="create-xboxseries-stock" name="create-xboxseries-stock" placeholder="Stock"/>
                 </li>
-                <li id="create-platform-pc">
+                <li id="create-platform-pc" class="main-card create-platform-card">
                     <h3>PC</h3>
                     <input type="checkbox" id="create-pc-enabled" name="create-pc-enabled"/>
                     <label for="create-pc-enabled">Enabled</label>
@@ -146,7 +207,7 @@
                     <input type="number" id="create-pc-price" name="create-pc-price" placeholder="Price"/>
                     <input type="number" id="create-pc-stock" name="create-pc-stock" placeholder="Stock"/>
                 </li>
-                <li id="create-platform-switch">
+                <li id="create-platform-switch" class="main-card create-platform-card">
                     <h3>Nintendo Switch</h3>
                     <input type="checkbox" id="create-switch-enabled" name="create-switch-enabled"/>
                     <label for="create-switch-enabled">Enabled</label>
@@ -155,8 +216,21 @@
                     <input type="number" id="create-switch-stock" name="create-switch-stock" placeholder="Stock"/>
                 </li>
             </ul>
-            <input type="submit" onclick="formSubmit(this)" value="Save game">
-            <input type="submit" onclick="formSubmit(this)" value="Delete game">
+            <input type="submit" class="purchase-button" onclick="formSubmit(this)" value="Save game">
+            <input type="submit" class="purchase-button" onclick="formSubmit(this)" value="Delete game">
         </form>
+    </section>
+    <section class="main-section">
+        <h2>Contact Messages</h2>
+        <ul id="contact-messages">
+            {{#each messages}}
+                <li id="{{this.key}}" class="contact-message">
+                    <p>{{buildTimeFromTimestamp this.timestamp}}</p>
+                    <p>{{this.message}}</p>
+                    <button onclick="deleteMessage('{{this.key}}')"><img src="/media/bootstrap-icons-1.10.1/trash.svg"></button>
+                    <p><b>From:</b> {{this.email}}</p>
+                </li>
+            {{/each}}
+        </ul>
     </section>
 </main>

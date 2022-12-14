@@ -8,10 +8,18 @@ const handlebars = require('express-handlebars');
 const mysql = require("mysql");
 const session = require("express-session");
 const axios = require("axios");
+const http = require('http');
+const server = http.createServer(app);
+const { Server } = require("socket.io");
+const io = new Server(server);
 const { initializeApp, applicationDefault, cert } = require('firebase-admin/app');
 const { getFirestore, Timestamp, FieldValue } = require('firebase-admin/firestore');
 const { getAuth } = require('firebase-admin/auth');
 const { firebase } = require('firebase-admin');
+const { getDatabase } = require('firebase-admin/database');
+
+// Data config
+const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 // Load credentials
 const serviceAccount = require('../config/advanced-development-s5208752-firebase-adminsdk-r1azo-550af01131.json');
@@ -140,6 +148,15 @@ app.engine('.hbs', handlebars.engine({
         splitString: (inputString: string, splitChar: string, segment: number) => {
             const splitString = inputString.split(splitChar);
             return splitString[segment];
+        },
+        buildTimeFromTimestamp: (timestamp: number) => {
+            const messageDate = new Date(timestamp);
+            const date = messageDate.getDate();
+            const month = messageDate.getMonth();
+            const year = messageDate.getFullYear();
+            const hours = zeroPad(messageDate.getHours());
+            const minutes = zeroPad(messageDate.getMinutes());
+            return `${date}${ordinal(date)} ${months[month].substring(0, 3)} ${year}, ${hours}:${minutes}`;
         }
     }
 }));
@@ -156,16 +173,18 @@ app.use(session({
 	resave: true,
 	saveUninitialized: true
 }));
-app.listen(port, () => {
+server.listen(port, () => {
     console.log(`AD Games listening on port ${port}`);
 })
 
 // Firebase config
 initializeApp({
-    credential: cert(serviceAccount)
+    credential: cert(serviceAccount),
+    databaseURL: "https://advanced-development-s5208752-default-rtdb.europe-west1.firebasedatabase.app/"
 });
 const db = getFirestore();
 const auth = getAuth();
+const rdb = getDatabase();
 
 // Index page
 app.get('/', async (req: any, res: any) => {
@@ -243,7 +262,23 @@ app.get('/admin', async (req: any, res: any) => {
         return;
     }
 
-    let params: { photoURL?: string } = {}
+    let params: { photoURL?: string, messages: Array<any> } = {
+        messages: []
+    }
+
+    const ref = await rdb.ref("contact").child("messages").get();
+    if (ref.exists()) {
+        const dbdata = ref.val();
+        for (const key of Object.keys(dbdata)) {
+            const value = dbdata[key];
+            params.messages.push({
+                key,
+                email: value.email,
+                message: value.message,
+                timestamp: value.timestamp
+            })
+        }
+    }
 
     try {
         params.photoURL = req.session.user.photoURL;
@@ -837,6 +872,70 @@ app.get('/success', async (req: any, res: any) => {
     res.render("success", { pageName: "Success", ...params });
 })
 
+// Write contact message to realtime database
+app.post('/contactmessage', async (req: any, res: any) => {
+    const ref = rdb.ref("contact").child("messages");
+    const message = req.body.message || null;
+    const email = req.body.email || null;
+
+    if (!message) {
+        res.status(400).send("Please provide message body");
+        return;
+    }
+
+    if (!email) {
+        res.status(400).send("Please provide contact email");
+        return;
+    }
+
+    const messageData = {
+        message,
+        email,
+        timestamp: Date.now()
+    }
+
+    try {
+        const key = ref.push(messageData).getKey();
+        res.status(200).send("Message sent");
+        io.emit('contact-message', { key, ...messageData });
+    } catch (error) {
+        res.status(400).send(error);
+    }
+})
+
+// Remove contact message from realtime database
+app.post('/deletemessage', async (req: any, res: any) => {
+    // Check user is logged in
+    if (!req.session.loggedin) {
+        res.status(401).send(`Not logged in`);
+        return;
+    }
+
+    // Check user is administrator
+    try {
+        await checkIfUserIsAdmin(req.session.user.uid);
+    } catch (error) {
+        res.status(403).send(`Not an administrator`);
+        return;
+    }
+    
+    const ref = rdb.ref("contact").child("messages");
+    const messageID = req.body.id || null;
+
+    if (!messageID) {
+        res.status(400).send("Please provide message ID");
+        return;
+    }
+
+    try {
+        await ref.child(messageID).remove();
+        res.status(200).send(`Removed message '${messageID}'`);
+    } catch (error: any) {
+        res.status(400).send(error)
+    }
+
+})
+
 // Catch 404's
 app.get('*', function(req: any, res: any){
     res.render("404");
@@ -968,4 +1067,30 @@ function writeFile(path: string, content: string) {
             }
 		})
 	})
+}
+
+function ordinal(date: number) {
+    if (date > 3 && date < 21) {
+        return 'th';
+    }
+
+    switch (date % 10) {
+        case 1:
+            return "st";
+        case 2:
+            return "nd";
+        case 3:
+            return "rd";
+        default:
+            return "th";
+    }
+}
+
+// Prepend zeroes to number (or add after) to desired length
+function zeroPad(num: number | string, size = 2, after = false) {
+    num = String(num);
+    while (num.length < size) {
+        num = after ? num + "0" : "0" + num;
+    }
+    return num;
 }
