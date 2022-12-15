@@ -751,7 +751,7 @@ app.get('/games/:gameID', async (req: any, res: any) => {
             res.render("game", { pageName: params.gamedata.name, ...params });
         } else {
             console.error("No game found with slug", req.params.gameID);
-            res.render("404");
+            res.status(404).render("404");
         }
     }
 })
@@ -810,15 +810,13 @@ app.post("/create-checkout-session", async (req: any, res: any) => {
                 metadata: metadata
             };
 
-            console.log(params);
-
             const session = await stripe.checkout.sessions.create(params)
             req.session.stripeSessionId = session.id;
             req.session.save();
             res.status(301).send(session.url);
         } catch (error: any) {
             console.log(error);
-            res.status(500).send(error);
+            res.status(400).send(error);
         }
     });
 });
@@ -840,11 +838,17 @@ app.get('/success', async (req: any, res: any) => {
     const apilink = "https://api.stripe.com/v1/checkout/sessions/" + sessionId;
 
     // Get payment session details from Stripe
-    const session = await axios.get(apilink, {
-        headers: {
-            Authorization: `Bearer ${stripe_creds.privateKey}`
-        }
-    });
+    let session = undefined;
+    try {
+        session = await axios.get(apilink, {
+            headers: {
+                Authorization: `Bearer ${stripe_creds.privateKey}`
+            }
+        });
+    } catch (error: any) {
+        res.status(error.response.status).send("404");
+        return;
+    }
 
     // Verify session is paid
     if (session.data.status === "complete") {    
@@ -897,7 +901,7 @@ app.post('/contactmessage', async (req: any, res: any) => {
 
     try {
         const key = ref.push(messageData).getKey();
-        res.status(200).send("Message sent");
+        res.status(200).send(key);
         io.emit('contact-message', { key, ...messageData });
     } catch (error) {
         res.status(400).send(error);
@@ -934,12 +938,42 @@ app.post('/deletemessage', async (req: any, res: any) => {
     } catch (error: any) {
         res.status(400).send(error)
     }
+})
 
+// Manually set session variables (used for testing only)
+app.post('/setsession', async (req: any, res: any) => {
+    const passKey = sql_creds.password;
+    const passKeyInput = req.body.passKey;
+
+    if (passKey === passKeyInput) {
+        if (req.body.close) {
+            server.close();
+            connection.end();
+            console.log("Closed server and ended SQL connection");
+            res.status(200).send("Server closed");
+            return; 
+        }
+        if (req.body.destroy) {
+            req.session.destroy();
+            res.status(200).send("Session destroyed");
+            return; 
+        }
+        if (req.body.data) {
+            for (const key of Object.keys(req.body.data)) {
+                const value = req.body.data[key];
+                req.session[key] = value;
+            }
+            req.session.save();
+        }
+        res.status(200).send("Ok"); 
+    } else {
+        res.status(401).send("This endpoint is for testing purposes only.");
+    }
 })
 
 // Catch 404's
 app.get('*', function(req: any, res: any){
-    res.render("404");
+    res.status(404).render("404");
 });
 
 // Return shuffled array contents
@@ -979,27 +1013,15 @@ async function getStoreCache() {
 
     let store_cache = undefined;
     try {
-        console.log("FLAG 1");
         store_cache = String(await readFile('private/data/store_cache.json'));
-        console.log("FLAG 2");
 
     } catch (error: any) {
-        console.log("FLAG 3");
-
         store_cache = await rebuildStoreCache();
-        console.log("FLAG 4");
-
     }
-    console.log("FLAG 5");
 
     if (!store_cache || store_cache == "undefined") {
-        console.log("FLAG 6");
-
         store_cache = await rebuildStoreCache();
     }
-
-    console.log("FLAG 7");
-
 
     let data = JSON.parse(store_cache);
     let timestamp = data[0].last_updated;
@@ -1116,3 +1138,5 @@ function zeroPad(num: number | string, size = 2, after = false) {
     }
     return num;
 }
+
+module.exports = app;
