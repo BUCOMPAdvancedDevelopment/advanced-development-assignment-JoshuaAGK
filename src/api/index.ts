@@ -1,7 +1,7 @@
 // Load modules
 const express = require('express')
 const app = express()
-const port = 3000
+const port = process.env.port || 8080
 const bodyParser = require('body-parser')
 const fs = require('fs');
 const handlebars = require('express-handlebars');
@@ -13,6 +13,7 @@ const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
 const { initializeApp, applicationDefault, cert } = require('firebase-admin/app');
+import * as admin from 'firebase-admin'
 const { getFirestore, Timestamp, FieldValue } = require('firebase-admin/firestore');
 const { getAuth } = require('firebase-admin/auth');
 const { firebase } = require('firebase-admin');
@@ -67,7 +68,7 @@ const stripe = require("stripe")(stripe_creds.privateKey);
 app.engine('.hbs', handlebars.engine({
     extname: ".hbs",
     defaultLayout: "main",
-    partialsDir: __dirname + "\\private\\views\\partials",
+    partialsDir: __dirname + "/private/views/partials",
     helpers: {
         // Grabs the video ID from a YouTube link and convert it into an embed link
         embedHelper: (url: string) => {
@@ -166,7 +167,7 @@ app.use(bodyParser.urlencoded({extended : true}));
 app.use(bodyParser.json());
 app.use(express.static(__dirname + "/public"));
 app.set('view engine', 'hbs');
-app.set('views', __dirname + '\\private\\views\\');
+app.set('views', __dirname + '/private/views/');
 app.use(session({
 	secret: 'secret',
     cookie: {expires: new Date(253402300000000)},
@@ -974,11 +975,31 @@ function getFullPlatformName(shortname: string) {
 // REST calls are much cheaper than Firebase queries, plus this helps avoid rate limits
 async function getStoreCache() {
     let currentTime = Date.now();
-    let store_cache = String(await readFile(__dirname + '/private/data/store_cache.json'));
+    // let store_cache = String(await readFile(__dirname + '/private/data/store_cache.json'));
+
+    let store_cache = undefined;
+    try {
+        console.log("FLAG 1");
+        store_cache = String(await readFile('private/data/store_cache.json'));
+        console.log("FLAG 2");
+
+    } catch (error: any) {
+        console.log("FLAG 3");
+
+        store_cache = await rebuildStoreCache();
+        console.log("FLAG 4");
+
+    }
+    console.log("FLAG 5");
 
     if (!store_cache || store_cache == "undefined") {
+        console.log("FLAG 6");
+
         store_cache = await rebuildStoreCache();
     }
+
+    console.log("FLAG 7");
+
 
     let data = JSON.parse(store_cache);
     let timestamp = data[0].last_updated;
@@ -1037,16 +1058,18 @@ async function rebuildStoreCache() {
     const store_cache = [{last_updated: Date.now()}, ...foundGames];
 
     // Write entire contents of Firebase database to store_cache file
-    await writeFile(__dirname + '/private/data/store_cache.json', JSON.stringify(store_cache));
+    // await writeFile(__dirname + '/private/data/store_cache.json', JSON.stringify(store_cache));
+    await writeFile('private/data/store_cache.json', JSON.stringify(store_cache));
     return JSON.stringify(store_cache);
 }
 
 // Return contents of file
 function readFile(path: string) {
 	return new Promise<string>((resolve, reject) => {
-		fs.readFile(path, 'utf8', (err: any, data: any) => {
+		fs.readFile(path, 'utf8', async (err: any, data: any) => {
 			try {
-				resolve(data);
+                const contents: any = await admin.storage().bucket("advanced-development-s5208752.appspot.com").file(path).download();
+                resolve(contents);
 			} catch (err) {
                 console.error("Error reading file " + path);
                 reject(err);
@@ -1057,15 +1080,14 @@ function readFile(path: string) {
 
 // Write content to file
 function writeFile(path: string, content: string) {
-	return new Promise((resolve, reject) => {
-		fs.writeFile(path, content, (err: any) => {
-			if (err) {
-                console.error(err);
-                reject(err);
-            } else {
-                resolve(true);
-            }
-		})
+	return new Promise(async (resolve, reject) => {
+        try {
+            await admin.storage().bucket("advanced-development-s5208752.appspot.com").file(path).save(content);
+            resolve(null);
+        } catch (error: any) {
+            console.log(error);
+            reject(null);
+        }
 	})
 }
 
