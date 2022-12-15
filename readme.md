@@ -21,6 +21,9 @@ Welcome to my "AD Games" repository! This is the code for my Advanced Developmen
 6. Run `gcloud app deploy` to deploy the app to Google Cloud.
 7. Run `gcloud app browse` to see the URL the app has deployed to.
 
+### Testing
+Run `npm run test` to run unit tests against the API. Tests are located in `/src/__test__`.
+
 ## Author
 > Joshua Kelley
 >
