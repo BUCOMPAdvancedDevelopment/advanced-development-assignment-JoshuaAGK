@@ -260,11 +260,9 @@ window.addEventListener("load", () => {
         });
     }
 
-    if (document.querySelector(".purchase-button")) {
-        document.querySelector(".purchase-button").addEventListener("click", async () => {
-            const response = await axios.post("/create-checkout-session", {
-                items: 3
-            }, {
+    if (document.querySelector("#checkout-button")) {
+        document.querySelector("#checkout-button").addEventListener("click", async () => {
+            const response = await axios.post("/create-checkout-session", {}, {
                 validateStatus: false
             })
 

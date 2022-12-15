@@ -10,7 +10,8 @@
     "start-win": "cls && nodemon --ignore dist/api/public/scripts --ignore dist/api/private/data dist/app.js",
     "build-gae": "copyfiles -u 1 \"src/**/*\" -e \"src/**/*.ts\" dist && npm run after-gae",
     "after-gae": "tsc",
-    "start": "node dist/app.js"
+    "start": "node dist/app.js",
+    "test": "jest"
   },
   "author": "Joshua Kelley - S5208752",
   "license": "ISC",
@@ -33,7 +34,12 @@
   "devDependencies": {
     "@types/uuid": "^8.3.4",
     "copyfiles": "^2.4.1",
+    "jest": "^29.3.1",
     "nodemon": "^2.0.20",
+    "supertest": "^6.3.3",
     "tsc-watch": "^5.0.3"
+  },
+  "jest": {
+    "rootDir": "./dist"
   }
 }
